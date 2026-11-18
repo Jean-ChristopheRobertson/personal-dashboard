@@ -1,0 +1,38 @@
+openapi: 3.1.0
+info:
+  title: Personal Dashboard API
+  version: 0.1.0
+  description: Initial local API contract; expand alongside implemented endpoints.
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Check API process health
+      responses:
+        '200':
+          description: API is responding
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/v1/summary:
+    get:
+      operationId: getSummary
+      summary: Get the scaffold status summary
+      responses:
+        '200':
+          description: API scaffold status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, message]
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+                  message:
+                    type: string

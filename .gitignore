@@ -1,0 +1,33 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Go
+bin/
+*.test
+
+# Local state and data
+.data/
+data/
+*.db
+*.sqlite
+
+# Docker and editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Terraform state (when infrastructure work begins)
+**/.terraform/
+*.tfstate
+*.tfstate.*

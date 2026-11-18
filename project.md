@@ -119,7 +119,7 @@ The schema is not finalized. Define ownership, timezone behavior, recurrence sem
 
 | Area                       | Current direction                          | Decision state / notes                                                                                               |
 | -------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Frontend                   | TypeScript                                 | Framework TBD; choose based on desired learning and accessibility support.                                           |
+| Frontend                   | React + Vite + TypeScript                  | Local-first SPA; keep the API as a separate Go service.                                                              |
 | Backend                    | Go REST API                                | Framework TBD; keep HTTP behavior and OpenAPI contracts portable.                                                    |
 | Analytics/integration jobs | Python                                     | Add after MVP; avoid a separate always-on worker until needed.                                                       |
 | Primary database           | PostgreSQL                                 | Local first. Cloud database choice and cost implications need a separate decision.                                   |
@@ -215,26 +215,31 @@ Do not use real personal data in a cloud environment until authentication/author
 
 - **Recommendation: start with one private GitHub monorepo** for this solo learning project. The UI, Go API, OpenAPI contract, and deployment configuration will change together; one pull request and one Actions workflow are easier to maintain than coordinating several repositories. This does not require deploying every component as a microservice.
 - Keep production/personal data out of GitHub. Store source, documentation, infrastructure definitions, and synthetic fixtures in the repository; actual dashboard records belong in PostgreSQL. Never commit credentials, OAuth tokens, `.env` files, local database volumes, Terraform state, or kubeconfig files.
+- Selected local workflow: **React + Vite** for the TypeScript frontend and **Docker Compose** for the local app/API/PostgreSQL stack. The optional `observability` Compose profile runs Prometheus, Loki, Grafana, and an OTLP Collector. Kubernetes remains a later, optional local learning phase.
 - Suggested repository layout (add service-specific directories only when those phases begin):
 
   ```text
-  jc-dashboard/
+  personal-dashboard/
   ├── .github/
   │   └── workflows/            # CI now; guarded deploy workflow later
   ├── apps/
-  │   └── web/                  # TypeScript UI and thin BFF
+  │   └── web/                  # React + Vite + TypeScript dashboard
   ├── services/
-  │   ├── api/                  # Go REST API
-  │   └── worker-python/        # Add in the integration/analytics phase
+  │   ├── api/                  # Go API: cmd/api/, internal/
+  │   └── worker-python/        # Add during integration/analytics phase
   ├── contracts/
   │   └── openapi/              # API contract shared by UI, API, and tests
-  ├── deploy/
-  │   └── kubernetes/           # Local base/overlays; AWS overlay only when needed
-  ├── infra/
-  │   └── terraform/            # AWS resources; no state files in Git
+  ├── db/
+  │   └── migrations/           # PostgreSQL schema migrations
   ├── observability/
-  │   ├── grafana/              # Provisioning and dashboards
-  │   └── local/                # Local Prometheus/Loki configuration
+  │   ├── otel-collector/
+  │   ├── prometheus/
+  │   ├── loki/
+  │   └── grafana/              # Provisioning and dashboards
+  ├── deploy/
+  │   └── kubernetes/           # Add later for local Kubernetes learning
+  ├── tests/
+  │   └── e2e/                  # Cross-service end-to-end tests
   ├── docs/
   │   ├── adr/                  # Short architecture decision records
   │   ├── runbooks/             # Deploy, restore, incident, and teardown steps
@@ -243,12 +248,12 @@ Do not use real personal data in a cloud environment until authentication/author
   ├── .dockerignore
   ├── .env.example              # Names/placeholders only; no secrets
   ├── .gitignore                # Local data, secrets, build output, IaC state
-  ├── compose.yaml              # Optional local app/dependency workflow
+  ├── compose.yaml              # Local app, database, and observability stack
   ├── README.md                 # Quick start and development commands
   └── project.md                # This plan
   ```
 
-- Initially, build the web app, Go API, and contract. Do not create placeholder services for every domain. Add `worker-python/` when there is a real integration or analytics task. Keep domain modules inside the API until a split is justified.
+- Initially, build the web app, Go API, OpenAPI contract, PostgreSQL schema, and local Compose/observability stack. Do not create placeholder services for every domain. Add `worker-python/`, Kubernetes manifests, and cloud infrastructure-as-code only when those phases or hosting decisions are underway. Keep domain modules inside the API until a split is justified.
 - Use one root CI workflow with path-aware jobs where that is helpful. Pull requests should run relevant formatting, lint, test, contract, and build checks. Add AWS deployment only later, using GitHub OIDC, a protected GitHub environment, narrowly scoped IAM permissions, and explicit approval for infrastructure changes.
 - Treat local data folders and local volumes as disposable and ignored by Git. Add only synthetic fixtures under a clearly named test/fixture path if needed.
 - Split into separate repositories later only if a component needs independent access control, ownership, release cadence, or genuinely independent reuse. A future split could move `infra/` to a dedicated private repository; do not pay that coordination cost up front.
